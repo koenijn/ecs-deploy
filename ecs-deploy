@@ -187,48 +187,19 @@ fi
 
 # Define regex for image name
 # This regex will create groups for:
-# - domain
-# - port
-# - repo
-# - image
+# - domain, port, repo and image
 # - tag
 # If a group is missing it will be an empty string
-imageRegex="^([a-zA-Z0-9.\-]+):?([0-9]+)?/([a-zA-Z0-9\-]+)/?([a-zA-Z0-9\-]+)?:?([a-zA-Z0-9\.\-]+)?$"
+imageRegex="(.+)[:](.*)"
 
 if [[ $IMAGE =~ $imageRegex ]]; then
   # Define variables from matching groups
-  domain=${BASH_REMATCH[1]}
-  port=${BASH_REMATCH[2]}
-  repo=${BASH_REMATCH[3]}
-  img=${BASH_REMATCH[4]}
-  tag=${BASH_REMATCH[5]}
-
-  # Validate what we received to make sure we have the pieces needed
-  if [[ "x$domain" == "x" ]]; then
-    echo "Image name does not contain a domain or repo as expected. See usage for supported formats." && exit 1;
-  fi
-  if [[ "x$repo" == "x" ]]; then
-    echo "Image name is missing the actual image name. See usage for supported formats." && exit 1;
-  fi
-
-  # When a match for image is not found, the image name was picked up by the repo group, so reset variables
-  if [[ "x$img" == "x" ]]; then
-    img=$repo
-    repo=""
-  fi
+  img=${BASH_REMATCH[1]}
+  tag=${BASH_REMATCH[2]}
 
 else
-  # check if using root level repo with format like mariadb or mariadb:latest
-  rootRepoRegex="^([a-zA-Z0-9\-]+):?([a-zA-Z0-9\.\-]+)?$"
-  if [[ $IMAGE =~ $rootRepoRegex ]]; then
-    img=${BASH_REMATCH[1]}
-    if [[ "x$img" == "x" ]]; then
-      echo "Invalid image name. See usage for supported formats." && exit 1
-    fi
-    tag=${BASH_REMATCH[2]}
-  else
-    echo "Unable to parse image name: $IMAGE, check the format and try again" && exit 1
-  fi
+  # else assume image has no tag
+  img=$IMAGE
 fi
 
 # If tag is missing make sure we can get it from env var, or use latest as default
@@ -245,21 +216,8 @@ fi
 
 # Reassemble image name
 useImage=""
-if [[ "x$domain" != "x" ]]; then
-  useImage="$domain"
-fi
-if [[ "x$port" != "x" ]]; then
-  useImage="$useImage:$port"
-fi
-if [[ "x$repo" != "x" ]]; then
-  useImage="$useImage/$repo"
-fi
 if [[ "x$img" != "x" ]]; then
-  if [[ "x$useImage" == "x" ]]; then
-    useImage="$img"
-  else
-    useImage="$useImage/$img"
-  fi
+  useImage="$img"
 fi
 imageWithoutTag="$useImage"
 if [[ "x$tag" != "x" ]]; then
